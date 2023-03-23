@@ -2,6 +2,11 @@
 
 local util = {}
 
+function util.create_file(path)
+    local file = io.open(path, 'w')
+    file:close()
+end
+
 function util.create_notesgpt_dir()
     local notesgpt_path = vim.fn.expand('~') .. '/notesGPT'
     if vim.fn.isdirectory(notesgpt_path) == 0 then

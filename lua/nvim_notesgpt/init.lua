@@ -1,61 +1,40 @@
 local telescope = require('telescope.builtin')
-local ts_utils = require('nvim-treesitter.ts_utils')
 local util = require('nvim_notesgpt.utils')
 
-local function create_new_note()
+local nvim_notesgpt = {}
+
+function nvim_notesgpt.create_new_note()
    local notesgpt_path = vim.fn.expand('~') .. '/notesGPT'
 
-   -- Custom entry maker for live_grep
-   local entry_maker = function(entry)
-      local filename = vim.fn.fnamemodify(entry.filename, ':t')
-      return {
-         valid = true,
-         value = entry,
-         ordinal = filename,
-         display = filename,
-      }
+   local title = vim.fn.input('Enter note title: ')
+   local note_path = notesgpt_path .. '/' .. title .. '.txt'
+
+   if vim.fn.filereadable(note_path) == 0 then
+      util.create_file(note_path)
    end
 
-   -- Custom attach callback for live_grep
-   local on_attach = function(prompt_bufnr)
-      local function create_or_open_note()
-         local title = require('telescope.actions.state').get_current_line()
-         local note_path = notesgpt_path .. '/' .. title .. '.txt'
+   vim.cmd('edit ' .. note_path)
+   vim.cmd('normal G')
+   vim.cmd('normal A')
+   vim.cmd('normal o')
+   vim.cmd('startinsert')
+end
 
-         if vim.fn.filereadable(note_path) == 1 then
-            vim.cmd('edit ' .. note_path)
-         else
-            util.create_file(note_path)
-            vim.cmd('edit ' .. note_path)
-         end
-
-         vim.cmd('stopinsert')
-         require('telescope.actions').close(prompt_bufnr)
-      end
-
-      -- Map <CR> to create or open the note
-      require('telescope.actions.set').set_mapping("<CR>", create_or_open_note, { noremap = true, silent = true })
-   end
-
+function nvim_notesgpt.search_notes()
    require('telescope.builtin').live_grep({
-      prompt_title = '< New Note >',
-      search_dirs = { notesgpt_path },
-      entry_maker = entry_maker,
-      attach_mappings = function(_, map)
-         map('i', '<CR>', on_attach)
-         return true
-      end,
+      prompt_title = '< Search Notes >',
+      cwd = vim.fn.expand('~') .. '/notesGPT',
    })
 end
 
-local function find_note()
+function nvim_notesgpt.find_note()
    telescope.find_files({
       prompt_title = '< Find Note >',
       cwd = vim.fn.expand('~') .. '/notesGPT',
    })
 end
 
-local function chat_note()
+function nvim_notesgpt.chat_note()
    local concatenated_notes = util.concatenate_notes()
 
    -- Send concatenated_notes to GPT API and receive response
@@ -72,8 +51,4 @@ local function chat_note()
    vim.api.nvim_buf_set_option(0, 'swapfile', false)
 end
 
-return {
-   create_new_note = create_new_note,
-   find_note = find_note,
-   chat_note = chat_note
-}
+return nvim_notesgpt
