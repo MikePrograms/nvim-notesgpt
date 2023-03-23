@@ -32,13 +32,6 @@ local function chat_note()
    vim.api.nvim_buf_set_option(0, 'swapfile', false)
 end
 
-vim.api.nvim_set_keymap('n', '<Space>NN', ':lua require("nvim_notesgpt").create_new_note()<CR>',
-   { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<Space>FN', ':lua require("nvim_notesgpt").find_note()<CR>',
-   { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<Space>CN', ':lua require("nvim_notesgpt").chat_note()<CR>',
-   { noremap = true, silent = true })
-
 return {
    create_new_note = create_new_note,
    find_note = find_note,
