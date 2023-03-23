@@ -3,9 +3,49 @@ local ts_utils = require('nvim-treesitter.ts_utils')
 local util = require('nvim_notesgpt.utils')
 
 local function create_new_note()
-   util.create_notesgpt_dir()
-   local new_note_path = vim.fn.expand('~') .. '/notesGPT/' .. util.generate_unique_filename()
-   vim.cmd('edit ' .. new_note_path)
+   local notesgpt_path = vim.fn.expand('~') .. '/notesGPT'
+
+   -- Custom entry maker for live_grep
+   local entry_maker = function(entry)
+      local filename = vim.fn.fnamemodify(entry.filename, ':t')
+      return {
+         valid = true,
+         value = entry,
+         ordinal = filename,
+         display = filename,
+      }
+   end
+
+   -- Custom attach callback for live_grep
+   local on_attach = function(prompt_bufnr)
+      local function create_or_open_note()
+         local title = require('telescope.actions.state').get_current_line()
+         local note_path = notesgpt_path .. '/' .. title .. '.txt'
+
+         if vim.fn.filereadable(note_path) == 1 then
+            vim.cmd('edit ' .. note_path)
+         else
+            util.create_file(note_path)
+            vim.cmd('edit ' .. note_path)
+         end
+
+         vim.cmd('stopinsert')
+         require('telescope.actions').close(prompt_bufnr)
+      end
+
+      -- Map <CR> to create or open the note
+      require('telescope.actions.set').set_mapping("<CR>", create_or_open_note, { noremap = true, silent = true })
+   end
+
+   require('telescope.builtin').live_grep({
+      prompt_title = '< New Note >',
+      search_dirs = { notesgpt_path },
+      entry_maker = entry_maker,
+      attach_mappings = function(_, map)
+         map('i', '<CR>', on_attach)
+         return true
+      end,
+   })
 end
 
 local function find_note()
